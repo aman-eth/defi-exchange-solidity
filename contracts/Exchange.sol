@@ -43,7 +43,22 @@ contract Exchange is ERC20 {
             );
             liquidity = (totalSupply() * msg.value) / ethReserve;
             _mint(msg.sender, liquidity);
-            return liquidity;
         }
+        return liquidity;
+    }
+
+    function removeLiquidity(uint256 _amount)
+        public
+        returns (uint256, uint256)
+    {
+        require(_amount > 0, "_amount should be greater than zero");
+        uint256 ethReserve = address(this).balance;
+        uint256 _totalSupply = totalSupply();
+        uint256 ethAmount = (ethReserve * _amount) / _totalSupply;
+        uint256 cryptoDevTokenAmount = (getReserve() * _amount) / _totalSupply;
+        _burn(msg.sender, _amount);
+        payable(msg.sender).transfer(ethAmount);
+        ERC20(cryptoDevTokenAddress).transfer(msg.sender, cryptoDevTokenAmount);
+        return (ethAmount, cryptoDevTokenAmount);
     }
 }
