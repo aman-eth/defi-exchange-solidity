@@ -17,4 +17,33 @@ contract Exchange is ERC20 {
     function getReserve() public view returns (uint256) {
         return ERC20(cryptoDevTokenAddress).balanceOf(address(this));
     }
+
+    function addLiquidity(uint256 _amount) public payable returns (uint256) {
+        uint256 liquidity;
+        uint256 ethBalance = address(this).balance;
+        uint256 cryptoDevTokenReserve = getReserve();
+        ERC20 cryptoDevToken = ERC20(cryptoDevTokenAddress);
+
+        if (cryptoDevTokenReserve == 0) {
+            cryptoDevToken.transferFrom(msg.sender, address(this), _amount);
+            liquidity = ethBalance;
+            _mint(msg.sender, liquidity);
+        } else {
+            uint256 ethReserve = ethBalance - msg.value;
+            uint256 requiredCDTokenAmount = (msg.value *
+                cryptoDevTokenReserve) / (ethReserve);
+            require(
+                _amount >= requiredCDTokenAmount,
+                "Amount of tokens sent is less than the minimum amount"
+            );
+            cryptoDevToken.transferFrom(
+                msg.sender,
+                address(this),
+                requiredCDTokenAmount
+            );
+            liquidity = (totalSupply() * msg.value) / ethReserve;
+            _mint(msg.sender, liquidity);
+            return liquidity;
+        }
+    }
 }
